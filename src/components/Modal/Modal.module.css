@@ -1,0 +1,31 @@
+.Overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1200;
+  }
+  
+  .Modal {
+    max-width: calc(100vw - 50px);
+    max-height: calc(100vh - 50px);
+  }
+  
+  .Modal img {
+    max-height: calc(100vh - 50px);
+  }
+  
+  .ModalInput {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
