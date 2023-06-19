@@ -3,7 +3,7 @@ import Searchbar from "./Searchbar/Searchbar";
 import ImageGallery from "./ImageGallery/ImageGallery";
 import Loader from "./Loader/Loader";
 import Button from "./Button/Button";
-import {getImages} from 'api/images';
+import {getImages, PER_PAGE} from 'api/images';
 
 
 class App extends Component {
@@ -12,58 +12,52 @@ class App extends Component {
     page: 1,
     imageList: [],
     isLoading: false,
-    isError: '',
-    showLoadMoreButton: true,
+    error: '',
+    hideLoadMoreButton: false,
   }
 
   handleSearch = (category) => {
-    this.setState({category});
+    this.setState({ category, page: 1, imageList: [] });
   }
 
   handleLoadMore = () => {
-    this.setState({page: this.state.page + 1});
+    this.setState(prevState => ({ page: prevState.page + 1 }))
   }
 
-  async loadImages(append = false) {
+  async loadImages() {
+    const { category, page, imageList } = this.state;
     this.setState({isLoading: true});
-    const pageValue = (append ? this.state.page : 1)
-    let imageList = await getImages(this.state.category, pageValue);
-
-    if (typeof imageList === 'string') {
-      this.setState({imageList: [], isError: imageList, isLoading: false, showLoadMoreButton: false})
-    } else {
+    try {
+      let imageArray = await getImages(category, page);
       this.setState({
-        imageList: (append ? [...this.state.imageList, ...imageList] : imageList),
-        isLoading: false,
-        showLoadMoreButton: imageList.length > 0,
-        page: pageValue
+        imageList: [...imageList, ...imageArray],
+        hideLoadMoreButton: imageArray.length < PER_PAGE,
       });
+    } catch(err) {
+      this.setState({ error: err.message });
     }
+    this.setState({ isLoading: false });
   }
 
   async componentDidUpdate(prevProps, prevState) {
-    if (prevState.category !== this.state.category && !this.state.category) {
-      this.setState({imageList: []})
-    } else if (prevState.category !== this.state.category) {
+    if (prevState.category !== this.state.category || prevState.page !== this.state.page) {
       this.loadImages()
-    } else if (prevState.page < this.state.page) {
-      this.loadImages(true)
     }
   }
 
   render() {
-    const {imageList, isLoading, category, isError, showLoadMoreButton } = this.state;
+    const { imageList, isLoading, category, error, hideLoadMoreButton } = this.state;
     return (
       <>
         <Searchbar handleSearch={this.handleSearch} />
-        {isError ?
-          <div className="error">Oh no! We have the following error: <strong>{isError}</strong></div>
+        {error ?
+          <div className="error">Oh no! We have the following error: <strong>{error}</strong></div>
           :
           <>
             {imageList.length > 0 && 
               <>
                 <ImageGallery imageList={imageList} />
-                {(!isLoading && showLoadMoreButton) && <Button clickTOLoad={this.handleLoadMore} />}
+                {(!isLoading && !hideLoadMoreButton) && <Button clickTOLoad={this.handleLoadMore} />}
               </>
             }
             {(imageList.length < 1 && category && !isLoading) && <div className="nothing">Nothing found :(</div> }
